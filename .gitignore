@@ -1,0 +1,6 @@
+# OS and System files
+.DS_Store
+Thumbs.db
+
+# OpenCore logs
+opencore-*.txt
