@@ -95,3 +95,31 @@ Repo ini menyertakan 2 skrip bash darurat yang bisa dijalankan dari macOS Recove
 Jika tujuan instalasi adalah untuk penggunaan harian (Daily Driver), **macOS Tahoe belum layak digunakan pada laptop Tiger Lake** karena ketiadaan akselerasi hardware grafis (Metal). Menjalankan antarmuka modern macOS murni berbasis software rendering CPU menghasilkan performa tampilan yang sangat lambat (1–5 FPS).
 
 Gunakan EFI ini sebagai bahan riset, dokumentasi eksperimen, atau basis pengembangan lanjutan driver WhateverXe pada kernel Darwin generasi mendatang.
+---
+
+## 🙏 Credits & Acknowledgements
+
+Ucapan terima kasih dan apresiasi sebesar-besarnya kepada seluruh pengembang open-source yang karyanya memungkinkan berjalannya macOS pada perangkat non-Apple:
+
+- [**Acidanthera**](https://github.com/acidanthera):
+  - [OpenCorePkg](https://github.com/acidanthera/OpenCorePkg) — Bootloader UEFI modular yang tangguh.
+  - [Lilu](https://github.com/acidanthera/Lilu) — Mesin patching kernel runtime serbaguna.
+  - [VirtualSMC](https://github.com/acidanthera/VirtualSMC) — Emulasi chip Apple System Management Controller beserta plugin baterai dan prosesor.
+  - [AppleALC](https://github.com/acidanthera/AppleALC) — Patcher audio HD Realtek native tanpa merusak kext sistem.
+  - [VoodooPS2](https://github.com/acidanthera/VoodooPS2) — Driver antarmuka keyboard laptop internal.
+  - [RestrictEvents](https://github.com/acidanthera/RestrictEvents) — Pengendali kompatibilitas model Mac dan pembaruan OTA.
+- [**b00t0x**](https://github.com/b00t0x):
+  - [WhateverXe](https://github.com/b00t0x/WhateverXe) — Lilu plugin inovatif untuk adaptasi iGPU Intel Xe-LP (Tiger Lake & Alder Lake).
+  - [WhateverXe-Graphics](https://github.com/b00t0x/WhateverXe-Graphics) — Signed payload dan installer driver Metal untuk grafis Intel Xe.
+- [**dhinakg**](https://github.com/dhinakg):
+  - [USBToolBox](https://github.com/USBToolBox/kext) — Driver mapping port USB lintas platform.
+  - [AMFIPass](https://github.com/dhinakg/AMFIPass) — Pengendali trust anchor AMFI untuk kext pihak ketiga.
+- [**VoodooI2C Team**](https://github.com/VoodooI2C/VoodooI2C):
+  - [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C) & [VoodooI2CHID](https://github.com/VoodooI2C/VoodooI2CHID) — Driver bus I2C presisi untuk touchpad laptop modern.
+- [**Mieze**](https://github.com/Mieze):
+  - [RealtekRTL8111](https://github.com/Mieze/RTL8111_driver_for_OS_X) — Driver ethernet Realtek PCIe Gigabit.
+- [**Dortania**](https://dortania.github.io/):
+  - Panduan komprehensif *OpenCore Install Guide* dan *Getting Started with ACPI*.
+- [**Assaf Dori**](https://github.com/assafdori/bypass-mdm):
+  - Referensi teknik manipulasi direktori akun lokal dan bypass `.AppleSetupDone` via Recovery.
+
