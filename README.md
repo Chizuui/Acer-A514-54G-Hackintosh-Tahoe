@@ -1,6 +1,12 @@
 # Acer Aspire 5 A514-54G — macOS 26 Tahoe OpenCore EFI
 
+[Bahasa Indonesia](README_id.md) | **English**
+
+---
+
 OpenCore EFI configuration for **Acer Aspire 5 (A514-54G)** running **macOS 26 Tahoe (Darwin 25.x)**.
+
+> **Status Notice:** macOS installs and boots cleanly into the desktop environment, but **hardware graphics acceleration (Metal 3D) is non-functional** on Intel 11th Gen Tiger Lake due to macOS Tahoe build discrepancies (`25G325`). See the [Hardware Limitations](#-critical-hardware-limitations) section below for detailed technical analysis.
 
 ---
 
@@ -22,50 +28,50 @@ OpenCore EFI configuration for **Acer Aspire 5 (A514-54G)** running **macOS 26 T
 
 ---
 
-## 📊 Status Komponen & Kesimpulan Hardware
+## 📊 Component Status & Diagnostic Breakdown
 
-### ✅ Yang Berfungsi Penuh (Working):
-- **Bootloader & Kernel Boot:** OpenCore 1.0.8 lolos inisialisasi kernel, ACPI patch, dan memory quirks (`RebuildAppleMemoryMap`, `DisableIoMapperMapping`).
-- **Instalasi Sistem:** Berhasil partisi APFS, menyalin paket OS, dan menuntaskan 3 tahap reboot instalasi macOS Tahoe langsung ke NVMe SSD.
-- **WindowServer & 2D Framebuffer:** Layar eDP laptop menyala pada resolusi native dan kursor mouse panah putih aktif serta responsif.
-- **Input System:** Keyboard internal (`VoodooPS2Keyboard`), USB Gaming Keyboard, Mouse Wireless 2.4G, dan Trackpad (`VoodooI2CHID`).
-- **USB Controller & Ports:** Port XHCI terpetakan dan berjalan via `USBToolBox.kext` + `UTBDefault.kext`.
-- **Audio:** Realtek ALC255 dengan `AppleALC.kext` (Layout ID: `23`).
+### ✅ Working Out of the Box:
+- **Bootloader & Kernel Boot:** OpenCore 1.0.8 successfully initializes kernel tables, ACPI patches, and booter/memory quirks (`RebuildAppleMemoryMap`, `DisableIoMapperMapping`).
+- **System Installation:** Successfully partitions APFS, unpacks base images, and finishes all 3 reboot stages onto NVMe SSD.
+- **WindowServer & 2D Framebuffer:** Internal laptop eDP display lights up at native resolution; hardware mouse cursor renders smoothly and responds to input.
+- **Input System:** Internal PS/2 keyboard (`VoodooPS2Keyboard`), external USB Gaming Keyboard, 2.4G wireless mouse, and ELAN0522 I2C touchpad (`VoodooI2CHID`).
+- **USB Controller & Ports:** XHCI controller correctly mapped via `USBToolBox.kext` + `UTBDefault.kext`.
+- **Audio:** Realtek ALC255 driven by `AppleALC.kext` (Layout ID: `23`).
 - **Ethernet:** Realtek RTL8111 Gigabit Ethernet.
-- **Disk I/O:** NVMe SSD Intel 660p terdeteksi dan stabil dengan `nand-io-timeoutms=60000`.
+- **Storage Subsystem:** Intel NVMe SSD stable under `nand-io-timeoutms=60000`.
 
 ---
 
-### ❌ Batasan & Kendala Kritis (Hardware Limitations):
+### ❌ Critical Hardware Limitations:
 
-### 1. Intel Iris Xe Graphics (Gen12 Xe-LP) — Akselerasi Hardware (Metal 3D) GAGAL
-- **Fakta Resmi Apple:** Apple **tidak pernah merilis komputer Mac berbasis prosesor Intel Generasi ke-11 (Tiger Lake)**. macOS tidak memiliki driver grafis native resmi untuk arsitektur Intel Xe-LP.
-- **Eksperimen Driver WhateverXe:** Proyek Lilu plugin `WhateverXe.kext` (v0.5.0) dan paket driver `WhateverXe-Graphics` (v0.2.0) mencoba mengadaptasi sisa driver internal Apple (`AppleIntelTGLGraphics.kext`).
-- **Penyebab Kernel Panic:**
-  Pada macOS Tahoe build baru (**`25G325` / Darwin 25.6.0**), struktur tabel memori MMIO internal kernel berbeda dengan target build payload driver (`25G241`). Saat driver 3D diaktifkan (`-allow3d`), kernel mengalami **Page Fault Kernel Panic** (Error code 2, Write violation pada register CR2) yang memicu perputaran kipas darurat dan panas berlebih.
-- **Status Saat Ini:**
-  Hanya bisa berjalan stabil dalam mode **Software Rendering / 2D Framebuffer dasar** menggunakan boot-arg **`-wex-noaccel`**.
+#### 1. Intel Iris Xe Graphics (Gen12 Xe-LP) — Metal 3D Hardware Acceleration Fails
+- **Official Apple Architecture Support:** Apple **never produced any Mac computer powered by 11th Gen Intel (Tiger Lake) processors**. macOS possesses no native driver stack for Gen12 Intel Xe-LP architecture.
+- **WhateverXe Driver Adaptation:** The community project `WhateverXe.kext` (v0.5.0) paired with the `WhateverXe-Graphics` driver package (v0.2.0) injects adapted driver payloads (`AppleIntelTGLGraphics.kext`).
+- **Cause of Kernel Panic:**
+  On newer macOS Tahoe builds (**`25G325` / Darwin 25.6.0**), kernel MMIO page structures differ from the author's target payload build (`25G241`). When 3D acceleration is invoked (`-allow3d`), the kernel triggers a **Page Fault Kernel Panic** (Type 14, Error code 2, Write violation on CR2 register `0xfffffffeac732b005`), causing emergency thermal fan ramp-up.
+- **Current Operational Mode:**
+  The system runs stably only in **Software Rendering / 2D Framebuffer mode** with the boot argument **`-wex-noaccel`**.
 
-### 2. NVIDIA GeForce MX350 (dGPU)
-- Kartu grafis diskrit NVIDIA berbasis arsitektur Pascal/Turing Optimus **tidak didukung macOS** (Apple menghentikan dukungan web driver sejak macOS Mojave).
-- dGPU telah dimatikan secara permanen melalui `DeviceProperties` (`PciRoot(0x0)/Pci(0x6,0x0)/Pci(0x0,0x0)` -> `disable-gpu = 01000000`) agar hemat daya dan tidak memicu freeze PCIe bus.
+#### 2. NVIDIA GeForce MX350 (dGPU)
+- Dedicated NVIDIA mobile graphics based on Pascal/Turing Optimus are **unsupported in modern macOS** (Apple dropped NVIDIA web driver support since macOS Mojave).
+- The dGPU is permanently turned off via OpenCore `DeviceProperties` (`PciRoot(0x0)/Pci(0x6,0x0)/Pci(0x0,0x0)` -> `disable-gpu = 01000000`) to eliminate PCIe bus stalls and save battery.
 
 ---
 
-## 🛠️ Catatan Konfigurasi EFI
+## 🛠️ EFI Configuration Notes
 
-### 1. Kexts yang Diterapkan (`Kernel -> Add`)
+### 1. Active Kexts (`Kernel -> Add`)
 - `Lilu.kext` (v1.7.2)
-- `AMFIPass.kext` (v1.4.1 Mod untuk signing chain WhateverXe)
+- `AMFIPass.kext` (v1.4.1 Mod for WhateverXe trust anchors)
 - `AppleALC.kext` (Audio ALC255)
 - `RealtekRTL8111.kext` (Ethernet)
-- `RestrictEvents.kext` (dengan `revpatch=sbvmm`)
+- `RestrictEvents.kext` (with `revpatch=sbvmm`)
 - `VirtualSMC.kext` + `SMCBatteryManager.kext` + `SMCProcessor.kext`
-  *(Catatan: `SMCSuperIO.kext` DINONAKTIFKAN karena laptop Acer tidak memiliki chip SuperIO desktop; probing port LPC-nya memicu freeze).*
+  *(Note: `SMCSuperIO.kext` is DISABLED; laptops utilize Embedded Controllers, probing desktop LPC ports causes hardware hangs).*
 - `USBToolBox.kext` + `UTBDefault.kext`
 - `VoodooI2C.kext` + `VoodooI2CHID.kext`
-  *(Catatan: `VoodooI2CELAN.kext` DINONAKTIFKAN untuk menghindari deadlock bus I2C ganda).*
-- `VoodooPS2Controller.kext` (`VoodooPS2Keyboard.kext` aktif)
+  *(Note: `VoodooI2CELAN.kext` is DISABLED to prevent dual satellite driver races).*
+- `VoodooPS2Controller.kext` (`VoodooPS2Keyboard.kext` enabled)
 - `WhateverXe.kext` (v0.5.0)
 
 ### 2. Boot Arguments (`NVRAM -> 7C436110-AB2A-4BBB-A880-FE41995C9F82`)
@@ -74,52 +80,52 @@ OpenCore EFI configuration for **Acer Aspire 5 (A514-54G)** running **macOS 26 T
 ```
 
 ### 3. SIP (System Integrity Protection)
-- Nilai `csr-active-config`: `<03080000>` (`0x803`), syarat wajib lingkungan AMFIPass Mod & instalasi driver eksternal di Tahoe.
+- `csr-active-config`: `<03080000>` (`0x803`), required for AMFIPass Mod and third-party driver signing validation on macOS Tahoe.
 
 ---
 
-## 📁 Skrip Utilitas Pembantu (Recovery Tools)
+## 📁 Recovery & Helper Scripts
 
-Repo ini menyertakan 2 skrip bash darurat yang bisa dijalankan dari macOS Recovery Terminal:
+Two automation shell scripts are included for execution within the macOS Recovery Terminal:
 
 1. **`setup_user.sh`:**
-   - Mem-bypass antarmuka *Setup Assistant* ("Liquid Glass") yang macet saat pertama kali boot tanpa akselerasi Metal.
-   - Otomatis membuat akun admin lokal (`admin` / password: `1234`) dan menyuntikkan `.AppleSetupDone` serta `.skipbuddy`.
+   - Bypasses the unaccelerated "Liquid Glass" *Setup Assistant* hang on initial boot.
+   - Automatically provisions a local administrator account (`admin` / password: `1234`) and creates `.AppleSetupDone` and `.skipbuddy`.
 2. **`remove_gpu.sh`:**
-   - Membersihkan kext grafis `AppleIntelTGL*` dari `/Library/Extensions/` dan menghapus `AuxiliaryKernelExtensions.kc` jika sistem mengalami bootloop/kernel panic.
+   - Safely cleans `AppleIntelTGL*` graphics kexts from `/Library/Extensions/` and wipes corrupted `AuxiliaryKernelExtensions.kc` if the machine encounters a bootloop/kernel panic.
 
 ---
 
-## ⚠️ Kesimpulan & Saran
+## ⚠️ Conclusion & Recommendations
 
-Jika tujuan instalasi adalah untuk penggunaan harian (Daily Driver), **macOS Tahoe belum layak digunakan pada laptop Tiger Lake** karena ketiadaan akselerasi hardware grafis (Metal). Menjalankan antarmuka modern macOS murni berbasis software rendering CPU menghasilkan performa tampilan yang sangat lambat (1–5 FPS).
+For daily productivity use, **macOS Tahoe is not recommended on Tiger Lake laptops** due to the absence of hardware graphics acceleration (Metal). Software rendering forces the CPU to composite modern translucent UI elements, resulting in a 1–5 FPS user experience.
 
-Gunakan EFI ini sebagai bahan riset, dokumentasi eksperimen, atau basis pengembangan lanjutan driver WhateverXe pada kernel Darwin generasi mendatang.
+This repository is maintained as a technical baseline, proof of concept, and research reference for future kernel-level driver development on Darwin.
+
 ---
 
 ## 🙏 Credits & Acknowledgements
 
-Ucapan terima kasih dan apresiasi sebesar-besarnya kepada seluruh pengembang open-source yang karyanya memungkinkan berjalannya macOS pada perangkat non-Apple:
+Tremendous gratitude and appreciation to the open-source Hackintosh community and developers:
 
 - [**Acidanthera**](https://github.com/acidanthera):
-  - [OpenCorePkg](https://github.com/acidanthera/OpenCorePkg) — Bootloader UEFI modular yang tangguh.
-  - [Lilu](https://github.com/acidanthera/Lilu) — Mesin patching kernel runtime serbaguna.
-  - [VirtualSMC](https://github.com/acidanthera/VirtualSMC) — Emulasi chip Apple System Management Controller beserta plugin baterai dan prosesor.
-  - [AppleALC](https://github.com/acidanthera/AppleALC) — Patcher audio HD Realtek native tanpa merusak kext sistem.
-  - [VoodooPS2](https://github.com/acidanthera/VoodooPS2) — Driver antarmuka keyboard laptop internal.
-  - [RestrictEvents](https://github.com/acidanthera/RestrictEvents) — Pengendali kompatibilitas model Mac dan pembaruan OTA.
+  - [OpenCorePkg](https://github.com/acidanthera/OpenCorePkg) — Modular, powerful UEFI bootloader.
+  - [Lilu](https://github.com/acidanthera/Lilu) — Versatile kernel patching engine.
+  - [VirtualSMC](https://github.com/acidanthera/VirtualSMC) — Apple SMC emulator, battery manager, and processor sensors.
+  - [AppleALC](https://github.com/acidanthera/AppleALC) — Native Realtek HD audio patcher.
+  - [VoodooPS2](https://github.com/acidanthera/VoodooPS2) — Laptop PS/2 keyboard controller.
+  - [RestrictEvents](https://github.com/acidanthera/RestrictEvents) — System capability and OTA update management.
 - [**b00t0x**](https://github.com/b00t0x):
-  - [WhateverXe](https://github.com/b00t0x/WhateverXe) — Lilu plugin inovatif untuk adaptasi iGPU Intel Xe-LP (Tiger Lake & Alder Lake).
-  - [WhateverXe-Graphics](https://github.com/b00t0x/WhateverXe-Graphics) — Signed payload dan installer driver Metal untuk grafis Intel Xe.
+  - [WhateverXe](https://github.com/b00t0x/WhateverXe) — Pioneering Lilu plugin for Intel Xe-LP (Tiger Lake & Alder Lake) iGPUs.
+  - [WhateverXe-Graphics](https://github.com/b00t0x/WhateverXe-Graphics) — Signed graphics payloads and Metal installer.
 - [**dhinakg**](https://github.com/dhinakg):
-  - [USBToolBox](https://github.com/USBToolBox/kext) — Driver mapping port USB lintas platform.
-  - [AMFIPass](https://github.com/dhinakg/AMFIPass) — Pengendali trust anchor AMFI untuk kext pihak ketiga.
+  - [USBToolBox](https://github.com/USBToolBox/kext) — Cross-platform USB port mapping kext.
+  - [AMFIPass](https://github.com/dhinakg/AMFIPass) — Apple Mobile File Integrity trust anchor controller.
 - [**VoodooI2C Team**](https://github.com/VoodooI2C/VoodooI2C):
-  - [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C) & [VoodooI2CHID](https://github.com/VoodooI2C/VoodooI2CHID) — Driver bus I2C presisi untuk touchpad laptop modern.
+  - [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C) & [VoodooI2CHID](https://github.com/VoodooI2C/VoodooI2CHID) — Precision I2C bus trackpad drivers.
 - [**Mieze**](https://github.com/Mieze):
-  - [RealtekRTL8111](https://github.com/Mieze/RTL8111_driver_for_OS_X) — Driver ethernet Realtek PCIe Gigabit.
+  - [RealtekRTL8111](https://github.com/Mieze/RTL8111_driver_for_OS_X) — PCIe Gigabit Ethernet driver.
 - [**Dortania**](https://dortania.github.io/):
-  - Panduan komprehensif *OpenCore Install Guide* dan *Getting Started with ACPI*.
+  - Authoritative *OpenCore Install Guide* and *Getting Started with ACPI*.
 - [**Assaf Dori**](https://github.com/assafdori/bypass-mdm):
-  - Referensi teknik manipulasi direktori akun lokal dan bypass `.AppleSetupDone` via Recovery.
-
+  - Offline Directory Services manipulation and Setup Assistant bypass techniques.
